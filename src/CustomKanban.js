@@ -28,23 +28,31 @@ const Board = () => {
   const addColumn = () => {
     const newColumn = {
       id: Math.random().toString(),
-      title: "New Column",
+      title: "제목을 입력해주세요",
       headingColor: "text-neutral-400",
     };
     setColumns([...columns, newColumn]);
   };
 
   const updateColumnTitle = (id, newTitle) => {
-    setColumns(columns.map(column => column.id === id ? { ...column, title: newTitle } : column));
+    setColumns(
+      columns.map((column) =>
+        column.id === id ? { ...column, title: newTitle } : column
+      )
+    );
   };
 
   const updateColumnColor = (id, newColor) => {
-    setColumns(columns.map(column => column.id === id ? { ...column, headingColor: newColor } : column));
+    setColumns(
+      columns.map((column) =>
+        column.id === id ? { ...column, headingColor: newColor } : column
+      )
+    );
   };
 
   const removeColumn = (id) => {
-    setColumns(columns.filter(column => column.id !== id));
-    setCards(cards.filter(card => card.column !== id));
+    setColumns(columns.filter((column) => column.id !== id));
+    setCards(cards.filter((card) => card.column !== id));
   };
 
   const onDragEnd = (result) => {
@@ -54,15 +62,12 @@ const Board = () => {
       const reorderedColumns = [...columns];
       const [removed] = reorderedColumns.splice(result.source.index, 1);
 
-      // Check if the column is dragged to the burn barrel
       if (result.destination.droppableId === "burnBarrel") {
         removeColumn(removed.id);
       } else {
         reorderedColumns.splice(result.destination.index, 0, removed);
         setColumns(reorderedColumns);
       }
-    } else {
-      // Handle card reordering if necessary
     }
   };
 
@@ -133,14 +138,24 @@ const Column = ({
   updateColumnTitle,
   updateColumnColor,
   removeColumn,
-  dragHandleProps
+  dragHandleProps,
 }) => {
   const [active, setActive] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(title);
 
+  // 타이틀을 삭제할 때 애니메이션 상태 추가
+  const [isDeletingTitle, setIsDeletingTitle] = useState(false);
+
   const handleDragStart = (e, card) => {
     e.dataTransfer.setData("cardId", card.id);
+  };
+
+  const handleTitleDelete = () => {
+    setIsDeletingTitle(true); // 애니메이션 시작
+    setTimeout(() => {
+      removeColumn(id); // 실제 삭제
+    }, 1000); // 1초 뒤에 삭제
   };
 
   const handleDragEnd = (e) => {
@@ -253,7 +268,7 @@ const Column = ({
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               onBlur={handleTitleChange}
-              onKeyDown={(e) => e.key === 'Enter' && handleTitleChange()}
+              onKeyDown={(e) => e.key === "Enter" && handleTitleChange()}
               autoFocus
             />
           ) : (
@@ -271,10 +286,19 @@ const Column = ({
         <span className="rounded text-sm text-neutral-400">
           {filteredCards.length}
         </span>
-        <button onClick={() => removeColumn(id)} className="text-neutral-400 hover:text-red-500 ml-2">
-          <FiTrash />
-        </button>
+
+        {isDeletingTitle ? ( // 타이틀 삭제 중일 때 애니메이션 추가
+          <FaFire className="animate-bounce text-red-500 ml-2" />
+        ) : (
+          <button
+            onClick={handleTitleDelete}
+            className="text-neutral-400 hover:text-red-500 ml-2"
+          >
+            <FiTrash />
+          </button>
+        )}
       </div>
+
       <div
         onDrop={handleDragEnd}
         onDragOver={handleDragOver}
@@ -292,7 +316,6 @@ const Column = ({
     </div>
   );
 };
-
 const ColorPicker = ({ columnId, updateColumnColor }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -327,6 +350,7 @@ const ColorPicker = ({ columnId, updateColumnColor }) => {
 };
 
 const Card = ({ title, id, column, handleDragStart }) => {
+  
   return (
     <>
       <DropIndicator beforeId={id} column={column} />
@@ -372,9 +396,8 @@ const BurnBarrel = ({ setCards }) => {
 
     setActive(false);
   };
-
   return (
-    <div
+    <motion.div
       onDrop={handleDragEnd}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -383,9 +406,17 @@ const BurnBarrel = ({ setCards }) => {
           ? "border-red-800 bg-red-800/20 text-red-500"
           : "border-neutral-500 bg-neutral-500/20 text-neutral-500"
       }`}
+      animate={{
+        scale: active ? 1.2 : 1, // 드래그 오버 시 크기 확대
+      }}
+      transition={{ duration: 0.2 }} // 크기 변화 애니메이션 속도
     >
-      {active ? <FaFire className="animate-bounce" /> : <FiTrash />}
-    </div>
+      {active ? (
+        <FaFire className="animate-bounce text-red-500" />
+      ) : (
+        <FiTrash />
+      )}
+    </motion.div>
   );
 };
 
@@ -441,7 +472,7 @@ const AddCard = ({ column, setCards }) => {
           onClick={() => setAdding(true)}
           className="flex w-full items-center gap-1.5 px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:text-neutral-50"
         >
-          <span>Add card</span>
+          <span>add card</span>
           <FiPlus />
         </motion.button>
       )}
@@ -450,8 +481,8 @@ const AddCard = ({ column, setCards }) => {
 };
 
 const DEFAULT_COLUMNS = [
-  { id: "backlog", title: "Backlog", headingColor: "text-neutral-500" },
-  { id: "todo", title: "TODO", headingColor: "text-yellow-200" },
-  { id: "doing", title: "In progress", headingColor: "text-blue-200" },
-  { id: "done", title: "Complete", headingColor: "text-emerald-200" },
+  { id: "backlog", title: "제목을 입력하세요", headingColor: "text-neutral-500" },
+  { id: "todo", title: "제목을 입력하세요", headingColor: "text-yellow-200" },
+  { id: "doing", title: "제목을 입력하세요", headingColor: "text-blue-200" },
+  { id: "done", title: "제목을 입력하세요", headingColor: "text-emerald-200" },
 ];
